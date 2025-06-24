@@ -1,4 +1,4 @@
 [build]
   base = "apps/interviewer-app"
-  command = "npm install && npm run build"
-  publish = "dist"
+  command = "chmod +x node_modules/.bin/vite && npm install && npm run build"
+  publish = "apps/interviewer-app/dist"
