@@ -1,0 +1,13 @@
+{
+  "name": "questionnaire-monorepo",
+  "private": true,
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "dev:interviewer": "npm run dev --workspace=interviewer-app",
+    "dev:manager": "npm run dev --workspace=manager-app",
+    "build:interviewer": "npm run build --workspace=interviewer-app",
+    "build:manager": "npm run build --workspace=manager-app"
+  }
+}

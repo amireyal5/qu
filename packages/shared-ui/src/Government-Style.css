@@ -1,0 +1,132 @@
+/* ==========================================================================
+   SHARED UI - Government-Style.css - V4.0 (Unified & Complete)
+   ========================================================================== */
+
+/* --- 1. Global Variables & Root Configuration --- */
+:root {
+  --primary-blue: #003366;
+  --secondary-blue: #007bff;
+  --light-gray-bg: #f5f7fa;
+  --white-bg: #ffffff;
+  --text-primary: #212529;
+  --text-secondary: #5a6a78;
+  --border-color: #ced4da;
+  --success-green: #198754;
+  --danger-red: #bb2d3b;
+  --danger-red-hover: #a52834;
+  --warning-yellow: #ffc107;
+  --border-radius: 8px;
+  --container-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+  --input-shadow-focus: 0 0 0 4px rgba(0, 51, 102, 0.2);
+  --max-width-desktop: 1140px;
+}
+
+/* --- 2. Base Styles & Layout --- */
+@import url('https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700&display=swap');
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  direction: rtl;
+  font-family: 'Rubik', sans-serif;
+  background-color: var(--light-gray-bg);
+  color: var(--text-primary);
+  display: flex;
+  flex-direction: column;
+}
+
+#root {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+}
+
+h1, h2, h3, h4 { color: var(--primary-blue); font-weight: 700; margin: 0 0 1rem 0; }
+h2 { font-size: 1.8rem; border-bottom: 2px solid #eef2f7; padding-bottom: 0.75rem; margin-bottom: 1.5rem; }
+
+/* --- 3. Containers --- */
+.container {
+  width: 100%; max-width: var(--max-width-desktop);
+  margin: 30px auto; padding: 0 20px; box-sizing: border-box;
+  flex-grow: 1; display: flex; flex-direction: column;
+}
+
+.page-container {
+  background-color: var(--white-bg); padding: 30px 40px;
+  border-radius: var(--border-radius); box-shadow: var(--container-shadow);
+  border-top: 6px solid var(--primary-blue);
+  display: flex; flex-direction: column; flex-grow: 1;
+}
+
+@media (min-width: 992px) {
+  .questionnaire-view {
+    max-width: 800px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
+/* --- 4. Forms --- */
+.page-container form { display: flex; flex-direction: column; flex-grow: 1; }
+.form-group { margin-bottom: 1.5rem; }
+label { display: block; font-weight: 500; margin-bottom: 0.5rem; color: var(--text-secondary); }
+
+input[type="text"], input[type="email"], input[type="password"], select, textarea {
+  display: block; width: 100%; padding: 14px 20px;
+  font-size: 1rem; border: 1px solid var(--border-color);
+  border-radius: var(--border-radius); box-sizing: border-box;
+}
+input:focus, select:focus, textarea:focus {
+  outline: none; border-color: var(--primary-blue); box-shadow: var(--input-shadow-focus);
+}
+
+.radio-group, .checkbox-group { display: flex; flex-direction: column; gap: 12px; padding: 10px 0; }
+.radio-option, .checkbox-option { display: flex; align-items: center; gap: 10px; }
+input[type="radio"], input[type="checkbox"] { width: auto; height: 1.2em; width: 1.2em; }
+.radio-option label, .checkbox-option label { margin-bottom: 0; font-weight: 400; }
+
+.validation-message {
+  font-size: 0.9rem; display: block; margin-top: 8px;
+  padding: 8px 12px; border-radius: 4px;
+}
+.validation-message.error { background-color: #f8d7da; color: var(--danger-red); font-weight: 500; }
+.validation-message.info { background-color: #e9ecef; color: var(--text-secondary); }
+
+
+/* --- 5. Buttons & Actions --- */
+.btn, button {
+  padding: 12px 28px; font-size: 1.05rem; font-weight: 700;
+  border-radius: var(--border-radius); border: none; cursor: pointer;
+  transition: all 0.2s ease;
+}
+.btn:hover, button:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+button:disabled { background-color: #c0c6cc; cursor: not-allowed; opacity: 0.7; }
+
+.btn-primary { background-color: var(--primary-blue); color: white; }
+.btn-delete { background-color: var(--danger-red); color: white; }
+.btn-delete:hover { background-color: var(--danger-red-hover); }
+.btn-edit { background-color: var(--secondary-blue); color: white; }
+.btn-add { background-color: var(--success-green); color: white; }
+.btn-cancel { background-color: #6c757d; color: white; }
+
+.actions-bar {
+  display: flex; gap: 1rem; margin-top: auto;
+  padding-top: 2rem; border-top: 1px solid #e9ecef;
+}
+
+/* --- 6. Form Builder Specific Styles --- */
+.question-item {
+  padding: 15px 20px; border: 1px solid #e0e0e0; border-radius: var(--border-radius);
+  margin-bottom: 10px; background-color: white; display: flex;
+  justify-content: space-between; align-items: center;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+.drag-handle { cursor: grab; margin-left: 15px; color: #aaa; }
+.question-editor {
+  background-color: #f0f4f8; padding: 25px; border-radius: var(--border-radius);
+  margin: 10px 0 20px 0; border: 1px solid #e0e0e0;
+}
