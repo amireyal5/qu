@@ -1,4 +1,7 @@
 [build]
   base = "apps/interviewer-app"
   command = "chmod +x node_modules/.bin/vite && npm install && npm run build"
-  publish = "apps/interviewer-app/dist"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "22"
