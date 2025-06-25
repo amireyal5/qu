@@ -4,6 +4,9 @@
   "workspaces": [
     "apps/*"
   ],
+  "devDependencies": {
+    "vite": "^6.3.5"
+  },
   "scripts": {
     "dev:interviewer": "npm run dev --workspace=interviewer-app",
     "dev:manager": "npm run dev --workspace=manager-app",
