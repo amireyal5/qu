@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 // --- התיקון כאן ---
-import { collection, onSnapshot, query, orderBy, doc, updateDoc } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, orderBy, doc, updateDoc, getDoc, setDoc, writeBatch, addDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
