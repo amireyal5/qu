@@ -1,85 +1,168 @@
-import React, { useState, useEffect } from 'react';
-import { collection, query, onSnapshot, orderBy } from 'firebase/firestore';
+import React, { useState, useEffect, useMemo } from 'react';
+import { collection, onSnapshot, query, where, orderBy } from 'firebase/firestore';
 import { db } from '../firebase';
-import { useAuth } from '../context/AuthContext'; // ייבוא הקונטקסט
+import { Link } from 'react-router-dom';
+import * as XLSX from 'xlsx'; // ייבוא ספריית האקסל
 
 function ManagerDashboard() {
-  const { currentUser } = useAuth(); // קבלת המשתמש המחובר
+  const [allTemplates, setAllTemplates] = useState([]);
+  const [selectedTemplateId, setSelectedTemplateId] = useState('');
   const [questionnaires, setQuestionnaires] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null); // State לטיפול בשגיאות
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortConfig, setSortConfig] = useState({ key: 'submissionTimestamp', direction: 'desc' });
 
+  // 1. טעינת כל התבניות הזמינות כדי למלא את ה-dropdown
   useEffect(() => {
-    // אם אין משתמש, או אם המשתמש הוא אנונימי, אל תנסה למשוך נתונים
-    if (!currentUser || currentUser.isAnonymous) {
+    const q = query(collection(db, 'questionnaireTemplates'), orderBy('name'));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const templates = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setAllTemplates(templates);
+      if (templates.length > 0) {
+        setSelectedTemplateId(templates[0].id); // בחר את התבנית הראשונה כברירת מחדל
+      }
+    });
+    return () => unsubscribe();
+  }, []);
+
+  // 2. טעינת שאלונים לפי התבנית שנבחרה
+  useEffect(() => {
+    if (!selectedTemplateId) {
+      setQuestionnaires([]);
       setLoading(false);
-      // אין צורך להציג שגיאה, כי ייתכן שהמשתמש פשוט לא מחובר
-      return; 
+      return;
+    }
+    setLoading(true);
+    const q = query(
+      collection(db, 'questionnaires'),
+      where('template.id', '==', selectedTemplateId)
+    );
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const data = snapshot.docs.map(doc => ({ docId: doc.id, ...doc.data() }));
+      setQuestionnaires(data);
+      setLoading(false);
+    });
+    return () => unsubscribe();
+  }, [selectedTemplateId]);
+
+  // 3. לוגיקת חיפוש, מיון ועיבוד הנתונים
+  const processedData = useMemo(() => {
+    let filteredData = [...questionnaires];
+
+    // חיפוש
+    if (searchTerm) {
+      const lowercasedFilter = searchTerm.toLowerCase();
+      filteredData = filteredData.filter(item => {
+        const fullName = `${item.intervieweeLastName || ''} ${item.intervieweeFirstName || ''}`.toLowerCase();
+        return (
+          fullName.includes(lowercasedFilter) ||
+          item.intervieweeId.includes(lowercasedFilter) ||
+          item.interviewerName.toLowerCase().includes(lowercasedFilter)
+        );
+      });
     }
 
-    setLoading(true);
-    setError(null);
-    const q = query(collection(db, 'questionnaires'), orderBy('submissionTimestamp', 'desc'));
+    // מיון
+    if (sortConfig.key) {
+      filteredData.sort((a, b) => {
+        let aValue = a[sortConfig.key];
+        let bValue = b[sortConfig.key];
+        
+        // טיפול מיוחד בתאריכים
+        if (sortConfig.key === 'submissionTimestamp') {
+            aValue = aValue?.toDate() || 0;
+            bValue = bValue?.toDate() || 0;
+        }
+
+        if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
+        if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
+        return 0;
+      });
+    }
     
-    const unsubscribe = onSnapshot(q, 
-      (querySnapshot) => {
-        const data = querySnapshot.docs.map((doc, index) => ({
-          id: doc.id,
-          serialNumber: index + 1,
-          ...doc.data(),
-        }));
-        setQuestionnaires(data);
-        setLoading(false);
-      }, 
-      (err) => {
-        // כאן נתפוס את שגיאת ה-permission-denied אם היא בכל זאת קורית
-        console.error("Error fetching questionnaires: ", err);
-        setError("אין לך הרשאה לצפות בנתונים אלה.");
-        setLoading(false);
-      }
-    );
+    return filteredData;
+  }, [questionnaires, searchTerm, sortConfig]);
 
-    // ניקוי המאזין
-    return () => unsubscribe();
-  }, [currentUser]); // ה-useEffect תלוי עכשיו ב-currentUser
+  // 4. פונקציות עזר
+  const requestSort = (key) => {
+    let direction = 'asc';
+    if (sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+  };
 
-  // --- תצוגה מותנית משופרת ---
-  if (loading) {
-    return <div className="page-container"><p>טוען רשימת שאלונים...</p></div>;
-  }
-  
-  if (error) {
-    return <div className="page-container validation-message error"><h2>שגיאה</h2><p>{error}</p></div>;
-  }
+  const exportToExcel = () => {
+    const dataToExport = processedData.map((q, index) => ({
+      '#': index + 1,
+      'ת.ז. מרואיין': q.intervieweeId,
+      'שם מלא (מרואיין)': `${q.intervieweeLastName || ''} ${q.intervieweeFirstName || ''}`,
+      'טלפון': q.intervieweePhone || '',
+      'סטטוס': q.status || 'בוצע',
+      'שם המראיין': q.interviewerName,
+      'תאריך הגשה': q.submissionTimestamp?.toDate().toLocaleString('he-IL') || '',
+    }));
+    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "שאלונים");
+    XLSX.writeFile(workbook, `שאלונים-${new Date().toLocaleDateString('he-IL')}.xlsx`);
+  };
 
-  // אם הגענו לכאן, הכל תקין, הצג את הטבלה
+  const getSortIndicator = (key) => {
+    if (sortConfig.key !== key) return '↕️';
+    return sortConfig.direction === 'asc' ? '🔼' : '🔽';
+  };
+
   return (
     <div className="page-container">
       <h2>כל השאלונים שמולאו</h2>
+      
+      <div className="dashboard-controls">
+        <div className="form-group" style={{flex: 1}}>
+          <label>הצג שאלונים עבור תבנית:</label>
+          <select value={selectedTemplateId} onChange={(e) => setSelectedTemplateId(e.target.value)}>
+            {allTemplates.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+          </select>
+        </div>
+        <div className="form-group" style={{flex: 2}}>
+          <label>חיפוש חופשי:</label>
+          <input type="text" placeholder="חפש לפי שם, ת.ז, מראיין..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+        </div>
+        <div className="form-group" style={{alignSelf: 'flex-end'}}>
+          <button onClick={exportToExcel} className="btn btn-add">יצא לאקסל</button>
+        </div>
+      </div>
+
       <div className="table-wrapper">
         <table>
           <thead>
             <tr>
-              <th>#</th>
+              <th onClick={() => requestSort('serialNumber')}># {getSortIndicator('serialNumber')}</th>
+              <th onClick={() => requestSort('intervieweeLastName')}>שם מלא (מרואיין) {getSortIndicator('intervieweeLastName')}</th>
               <th>ת.ז. מרואיין</th>
-              <th>שם המראיין</th>
-              <th>תאריך מילוי</th>
+              <th onClick={() => requestSort('interviewerName')}>שם המראיין {getSortIndicator('interviewerName')}</th>
+              <th onClick={() => requestSort('submissionTimestamp')}>מועד הגשה {getSortIndicator('submissionTimestamp')}</th>
             </tr>
           </thead>
           <tbody>
-            {questionnaires.length > 0 ? (
-              questionnaires.map(q => (
-                <tr key={q.id}>
-                  <td>{q.serialNumber}</td>
-                  <td>{q.id}</td>
+            {loading ? (
+              <tr><td colSpan="5" style={{textAlign: 'center'}}>טוען...</td></tr>
+            ) : processedData.length > 0 ? (
+              processedData.map((q, index) => (
+                <tr key={q.docId}>
+                  <td>{index + 1}</td>
+                  <td>
+                    <Link to={`/questionnaire/${q.docId}`}>
+                      {`${q.intervieweeLastName || ''} ${q.intervieweeFirstName || ''}`}
+                    </Link>
+                  </td>
+                  <td>{q.intervieweeId}</td>
                   <td>{q.interviewerName}</td>
                   <td>{q.submissionTimestamp?.toDate().toLocaleString('he-IL')}</td>
                 </tr>
               ))
             ) : (
-              <tr>
-                <td colSpan="4" style={{ textAlign: 'center' }}>לא נמצאו שאלונים.</td>
-              </tr>
+              <tr><td colSpan="5" style={{textAlign: 'center'}}>לא נמצאו שאלונים התואמים לחיפוש.</td></tr>
             )}
           </tbody>
         </table>
