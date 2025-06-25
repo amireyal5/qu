@@ -18,6 +18,7 @@ function Navbar() {
             <div className="navbar-links" style={{display: 'flex', gap: '2rem'}}>
                 <NavLink to="/" style={({ isActive }) => isActive ? activeLinkStyle : undefined} end>שאלונים שמולאו</NavLink>
                 <NavLink to="/templates" style={({ isActive }) => isActive ? activeLinkStyle : undefined}>ניהול תבניות</NavLink>
+                <NavLink to="/exceptions" style={({ isActive }) => isActive ? activeLinkStyle : undefined}>טיפול בחריגות</NavLink>
             </div>
             <div className="navbar-user-info">
                 <span>שלום, {currentUser?.email}</span>
