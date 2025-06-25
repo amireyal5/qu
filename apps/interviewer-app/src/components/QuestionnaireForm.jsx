@@ -1,4 +1,4 @@
-// הקוד המלא והסופי של הקובץ הזה, כולל כל הפונקציות
+// הקוד המלא והסופי של QuestionnaireForm.jsx
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { doc, getDoc, setDoc, serverTimestamp, writeBatch, addDoc, collection } from 'firebase/firestore';
@@ -17,12 +17,10 @@ function QuestionnaireForm() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
   const [formData, setFormData] = useState({
     intervieweeId: '', intervieweeFirstName: '', intervieweeLastName: '',
     intervieweePhone: '', status: '', answers: {},
   });
-  
   const debouncedIntervieweeId = useDebounce(formData.intervieweeId, 600);
   const [isCheckingId, setIsCheckingId] = useState(false);
   const [idError, setIdError] = useState('');
@@ -36,7 +34,7 @@ function QuestionnaireForm() {
   const resetForm = () => { /* ... */ };
 
   const handleSaveAsException = async () => {
-    if (!window.confirm("האם אתה בטוח שברצונך לשמור את השאלון לטיפול עתידי?")) return;
+    if (!window.confirm("האם לשמור שאלון זה לטיפול המשרד?")) return;
     setIsSubmitting(true);
     const submissionData = {
       ...formData,
@@ -50,7 +48,7 @@ function QuestionnaireForm() {
       await addDoc(collection(db, "exceptions"), submissionData);
       alert("השאלון נשמר בהצלחה לטיפול המשרד.");
       resetForm();
-    } catch (err) { console.error("Error saving exception:", err); alert("אירעה שגיאה בשמירת החריגה."); }
+    } catch (err) { console.error(err); alert("שגיאה בשמירת החריגה."); }
     finally { setIsSubmitting(false); }
   };
 
