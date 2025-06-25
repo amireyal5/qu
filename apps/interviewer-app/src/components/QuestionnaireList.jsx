@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { collection, query, where, onSnapshot, orderBy } from 'firebase/firestore';
+// --- התיקון כאן ---
 import { collection, query, where, onSnapshot, orderBy, doc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../context/AuthContext';
+import useDebounce from '../hooks/useDebounce';
 
-// --- רכיב פנימי לעריכת פריט ברשימה - החלק שהיה חסר ---
+// רכיב פנימי לעריכת פריט ברשימה
 function EditableListItem({ questionnaire, serialNumber }) {
     const [isEditing, setIsEditing] = useState(false);
     const [editableData, setEditableData] = useState({
@@ -15,6 +16,10 @@ function EditableListItem({ questionnaire, serialNumber }) {
     });
     const [isSaving, setIsSaving] = useState(false);
 
+    // הסרנו את השמירה האוטומטית כדי לתת למשתמש שליטה מלאה
+    // const debouncedData = useDebounce(editableData, 1000);
+    // useEffect(() => { ... });
+    
     const handleChange = (e) => {
         setEditableData(prev => ({ ...prev, [e.target.name]: e.target.value }));
     };
@@ -87,7 +92,6 @@ function EditableListItem({ questionnaire, serialNumber }) {
         </div>
     );
 }
-// -----------------------------------------------------------------
 
 // הרכיב הראשי של הדף
 function QuestionnaireList() {
