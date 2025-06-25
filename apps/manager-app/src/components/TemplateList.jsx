@@ -2,43 +2,44 @@ import React, { useState, useEffect } from 'react';
 import { collection, onSnapshot, query, orderBy, doc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext'; // ייבוא הקונטקסט
+import { useAuth } from '../context/AuthContext';
 
 function TemplateList() {
-  const { currentUser } = useAuth(); // קבלת המשתמש המחובר
+  const { currentUser } = useAuth(); // קבלת המשתמש מהקונטקסט
   const [templates, setTemplates] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
-    // --- בדיקת הגנה קריטית ---
-    // אל תנסה למשוך נתונים אם אין משתמש מחובר
-    if (!currentUser) {
-      setLoading(false); // הפסק טעינה אם אין משתמש
-      return;
-    }
-    // -------------------------
-
-    setLoading(true);
+    if (!currentUser) { setLoading(false); return; }
     const q = query(collection(db, 'questionnaireTemplates'), orderBy('name'));
-    
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setTemplates(data);
       setLoading(false);
-    }, (error) => {
-        console.error("Error fetching templates:", error);
-        setLoading(false);
     });
-
     return () => unsubscribe();
-  }, [currentUser]); // ה-useEffect תלוי עכשיו ב-currentUser
+  }, [currentUser]);
 
   const toggleActiveStatus = async (templateId, currentStatus) => {
+    // --- בדיקת הרשאות בצד הלקוח ---
+    console.log("Attempting to toggle status. Current user:", currentUser);
+    if (!currentUser) {
+      alert("שגיאה: אינך מחובר.");
+      return;
+    }
+    console.log("User's provider data:", currentUser.providerData);
+    // --------------------------------
+
     const templateRef = doc(db, "questionnaireTemplates", templateId);
-    await updateDoc(templateRef, {
-      isActive: !currentStatus
-    });
+    try {
+        await updateDoc(templateRef, {
+            isActive: !currentStatus
+        });
+    } catch (error) {
+        console.error("Error toggling status:", error);
+        alert("שגיאה בעדכון הסטטוס.");
+    }
   };
 
   if (loading) return <div className="page-container"><p>טוען תבניות...</p></div>;
