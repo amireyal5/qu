@@ -1,13 +1,14 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
-
-import Login from './components/Login';
+import AuthPage from './components/AuthPage'; // <-- שימוש בקומפוננטה החדשה
 import ManagerDashboard from './components/ManagerDashboard';
 import QuestionnaireDetail from './components/QuestionnaireDetail';
 import TemplateList from './components/TemplateList';
 import FormBuilder from './components/FormBuilder';
 import Navbar from './components/Navbar';
+
+// ודא שה-CSS המשותף מיובא בקובץ main.jsx
 
 function App() {
   return (
@@ -23,11 +24,7 @@ function AppContent() {
   const { currentUser, loading } = useAuth();
   
   if (loading) {
-    return (
-      <div className="page-container" style={{ textAlign: 'center', justifyContent: 'center' }}>
-        <h2>טוען מערכת ניהול...</h2>
-      </div>
-    );
+    return <div className="page-container" style={{ textAlign: 'center' }}><h2>טוען...</h2></div>;
   }
 
   return (
@@ -35,16 +32,28 @@ function AppContent() {
       {currentUser && <Navbar />}
       <div className="container">
         <Routes>
-          <Route path="/login" element={!currentUser ? <Login /> : <Navigate to="/" />} />
-          <Route path="/" element={currentUser ? <ManagerDashboard /> : <Navigate to="/login" />} />
-          <Route path="/templates" element={currentUser ? <TemplateList /> : <Navigate to="/login" />} />
-          <Route path="/form-builder/:templateId" element={currentUser ? <FormBuilder /> : <Navigate to="/login" />} />
-          <Route path="/questionnaire/:id" element={currentUser ? <QuestionnaireDetail /> : <Navigate to="/login" />} />
-          <Route path="*" element={<Navigate to="/" />} />
+          {/* אם המשתמש לא מחובר, כל הדרכים מובילות לדף האימות */}
+          {!currentUser && (
+            <>
+              <Route path="/auth" element={<AuthPage />} />
+              <Route path="*" element={<Navigate to="/auth" replace />} />
+            </>
+          )}
+
+          {/* אם המשתמש מחובר */}
+          {currentUser && (
+            <>
+              <Route path="/" element={<ManagerDashboard />} />
+              <Route path="/templates" element={<TemplateList />} />
+              <Route path="/form-builder/:templateId" element={<FormBuilder />} />
+              <Route path="/questionnaire/:id" element={<QuestionnaireDetail />} />
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </>
+          )}
         </Routes>
       </div>
     </>
   );
 }
 
-export default App; // <-- השורה החשובה
+export default App;
