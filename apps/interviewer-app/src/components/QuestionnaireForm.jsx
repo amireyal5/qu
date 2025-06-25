@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { doc, getDoc, setDoc, serverTimestamp, writeBatch, addDoc, collection } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../context/AuthContext';
-import QuestionRenderer from './QuestionRenderer';
+import { QuestionRenderer } from 'shared-ui';
 import { isValidIsraeliID } from '../utils/validation';
 import useDebounce from '../hooks/useDebounce';
 
