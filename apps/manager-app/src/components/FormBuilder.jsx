@@ -2,13 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { doc, getDoc, setDoc, addDoc, collection } from 'firebase/firestore';
 import { db } from '../firebase';
+import { useAuth } from '../context/AuthContext'; // ייבוא הקונטקסט
 import { v4 as uuidv4 } from 'uuid';
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { arrayMove, SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import QuestionEditor from './QuestionEditor';
 
-// רכיב פנימי לתצוגה - ללא שינוי
+// רכיב פנימי לתצוגה
 function SortableQuestionItem({ question, onEdit, onDelete }) {
     const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: question.id });
     const style = { transform: CSS.Transform.toString(transform), transition };
@@ -23,6 +24,7 @@ function SortableQuestionItem({ question, onEdit, onDelete }) {
 function FormBuilder() {
   const { templateId } = useParams();
   const navigate = useNavigate();
+  const { currentUser } = useAuth(); // קבלת המשתמש מהקונטקסט
   const [template, setTemplate] = useState({ name: 'שאלון חדש', questions: [] });
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -67,8 +69,17 @@ function FormBuilder() {
   };
 
   const handleSaveTemplate = async (saveAsNew = false) => {
+    // --- בדיקת הרשאות בצד הלקוח ---
+    console.log("Attempting to save. Current user:", currentUser);
+    if (!currentUser) {
+      alert("שגיאה: אינך מחובר.");
+      return;
+    }
+    console.log("User's provider data:", currentUser.providerData);
+    // --------------------------------
+
     setIsSaving(true);
-    const dataToSave = { name: template.name, questions: template.questions };
+    const dataToSave = { name: template.name, questions: template.questions, isActive: template.isActive ?? false };
     try {
       if (templateId === 'new' || saveAsNew) {
         const newDocRef = await addDoc(collection(db, 'questionnaireTemplates'), dataToSave);
