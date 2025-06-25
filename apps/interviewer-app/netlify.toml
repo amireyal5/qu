@@ -4,7 +4,7 @@
   publish = "dist"
 
 [build.environment]
-  NODE_VERSION = "22"
+  NODE_VERSION = "18"
   VITE_API_KEY = "AIzaSyB0e6gYb3RAEQuHsn-2YTkMc7_FUkp8yIQ"
   VITE_AUTH_DOMAIN = "questionnaire-47fee.firebaseapp.com"
   VITE_PROJECT_ID = "questionnaire-47fee"
