@@ -2,14 +2,82 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { doc, getDoc, setDoc, addDoc, collection } from 'firebase/firestore';
 import { db } from '../firebase';
-import { useAuth } from '../context/AuthContext'; // ייבוא הקונטקסט
 import { v4 as uuidv4 } from 'uuid';
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { arrayMove, SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import QuestionEditor from './QuestionEditor';
 
-// רכיב פנימי לתצוגה
+// רכיב פנימי לעריכת שאלה
+function QuestionEditor({ question, onSave, onCancel }) {
+  const [editedQuestion, setEditedQuestion] = useState(question);
+
+  useEffect(() => {
+    setEditedQuestion(question);
+  }, [question]);
+
+  const handleChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setEditedQuestion(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value,
+    }));
+  };
+  
+  const handleOptionsChange = (e) => {
+    const optionsArray = e.target.value.split(',').map(opt => opt.trim());
+    setEditedQuestion(prev => ({ ...prev, options: optionsArray }));
+  };
+
+  const handleSave = (e) => {
+    e.preventDefault();
+    onSave(editedQuestion);
+  };
+
+  return (
+    <form onSubmit={handleSave} className="question-editor">
+      <h4>עריכת שאלה</h4>
+      <div className="form-group">
+        <label htmlFor="label">כותרת השאלה:</label>
+        <input type="text" id="label" name="label" value={editedQuestion.label} onChange={handleChange} required />
+      </div>
+      <div className="form-group">
+        <label htmlFor="type">סוג השאלה:</label>
+        <select id="type" name="type" value={editedQuestion.type} onChange={handleChange}>
+          <option value="text">טקסט קצר</option>
+          <option value="textarea">פסקה (טקסט ארוך)</option>
+          <option value="radio">בחירה יחידה (רדיו)</option>
+          <option value="checkbox">בחירה מרובה (צ'קבוקס)</option>
+        </select>
+      </div>
+
+      {editedQuestion.type === 'radio' && (
+        <div className="form-group-inline" style={{marginTop: '1rem', padding: '10px', background: '#e9ecef', borderRadius: '5px'}}>
+          <input type="checkbox" id="showInDashboard" name="showInDashboard" checked={!!editedQuestion.showInDashboard} onChange={handleChange} />
+          <label htmlFor="showInDashboard" style={{fontWeight: 'bold'}}>הצג כעמודה בדשבורד הראשי</label>
+        </div>
+      )}
+
+      {(editedQuestion.type === 'radio' || editedQuestion.type === 'checkbox') && (
+        <div className="form-group">
+          <label htmlFor="options">אפשרויות (מופרדות בפסיק):</label>
+          <input type="text" id="options" name="options" value={(editedQuestion.options || []).join(', ')} onChange={handleOptionsChange} placeholder="אפשרות 1, אפשרות 2" />
+        </div>
+      )}
+
+      <div className="form-group-inline">
+        <input type="checkbox" id="required" name="required" checked={!!editedQuestion.required} onChange={handleChange} />
+        <label htmlFor="required">שאלת חובה</label>
+      </div>
+
+      <div className="actions-bar">
+        <button type="button" onClick={onCancel} className="btn btn-cancel">בטל</button>
+        <button type="submit" className="btn btn-primary">שמור שינויים בשאלה</button>
+      </div>
+    </form>
+  );
+}
+
+// רכיב פנימי לתצוגת שאלה
 function SortableQuestionItem({ question, onEdit, onDelete }) {
     const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: question.id });
     const style = { transform: CSS.Transform.toString(transform), transition };
@@ -21,10 +89,10 @@ function SortableQuestionItem({ question, onEdit, onDelete }) {
     );
 }
 
+// רכיב ראשי
 function FormBuilder() {
   const { templateId } = useParams();
   const navigate = useNavigate();
-  const { currentUser } = useAuth(); // קבלת המשתמש מהקונטקסט
   const [template, setTemplate] = useState({ name: 'שאלון חדש', questions: [] });
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -32,7 +100,7 @@ function FormBuilder() {
   
   useEffect(() => {
     if (templateId === 'new') {
-      setTemplate({ name: 'שאלון חדש', questions: [] });
+      setTemplate({ name: 'שאלון חדש', questions: [], isActive: true });
       setLoading(false);
       return;
     }
@@ -69,17 +137,8 @@ function FormBuilder() {
   };
 
   const handleSaveTemplate = async (saveAsNew = false) => {
-    // --- בדיקת הרשאות בצד הלקוח ---
-    console.log("Attempting to save. Current user:", currentUser);
-    if (!currentUser) {
-      alert("שגיאה: אינך מחובר.");
-      return;
-    }
-    console.log("User's provider data:", currentUser.providerData);
-    // --------------------------------
-
     setIsSaving(true);
-    const dataToSave = { name: template.name, questions: template.questions, isActive: template.isActive ?? false };
+    const dataToSave = { name: template.name, questions: template.questions, isActive: template.isActive ?? true };
     try {
       if (templateId === 'new' || saveAsNew) {
         const newDocRef = await addDoc(collection(db, 'questionnaireTemplates'), dataToSave);
@@ -135,7 +194,7 @@ function FormBuilder() {
                 {templateId === 'new' ? 'שמור שאלון חדש' : 'שמור שינויים'}
             </button>
             {templateId !== 'new' && (
-                <button onClick={() => handleSaveTemplate(true)} disabled={isSaving} className="btn" style={{marginRight: '10px'}}>
+                <button onClick={() => handleSaveTemplate(true)} disabled={isSaving} className="btn" style={{marginRight: '10px', backgroundColor: 'var(--success-green)'}}>
                     שמור כעותק חדש
                 </button>
             )}
