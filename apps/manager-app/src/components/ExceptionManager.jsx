@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { collection, onSnapshot, orderBy, doc, getDoc, writeBatch } from 'firebase/firestore';
 import { db } from '../firebase';
-import { isValidIsraeliID } from '../../interviewer-app/src/utils/validation'; // נניח שהקובץ משותף
+import { isValidIsraeliID } from '../utils/validation';
 
 // רכיב פנימי לטיפול בחריגה בודדת
 function ExceptionItem({ exception }) {
