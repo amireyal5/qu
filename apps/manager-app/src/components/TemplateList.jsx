@@ -1,17 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { collection, query, where, onSnapshot, orderBy } from 'firebase/firestore';
+// --- התיקון כאן ---
+import { collection, onSnapshot, query, orderBy, doc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 function TemplateList() {
-  const { currentUser } = useAuth(); // קבלת המשתמש מהקונטקסט
+  const { currentUser } = useAuth();
   const [templates, setTemplates] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
     if (!currentUser) { setLoading(false); return; }
+    
     const q = query(collection(db, 'questionnaireTemplates'), orderBy('name'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -22,15 +24,11 @@ function TemplateList() {
   }, [currentUser]);
 
   const toggleActiveStatus = async (templateId, currentStatus) => {
-    // --- בדיקת הרשאות בצד הלקוח ---
-    console.log("Attempting to toggle status. Current user:", currentUser);
     if (!currentUser) {
       alert("שגיאה: אינך מחובר.");
       return;
     }
-    console.log("User's provider data:", currentUser.providerData);
-    // --------------------------------
-
+    
     const templateRef = doc(db, "questionnaireTemplates", templateId);
     try {
         await updateDoc(templateRef, {
