@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 // --- התיקון כאן ---
-import { collection, query, where, onSnapshot, orderBy, doc, updateDoc } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, orderBy, doc, updateDoc, getDoc, setDoc, writeBatch, addDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../context/AuthContext';
 import useDebounce from '../hooks/useDebounce';
