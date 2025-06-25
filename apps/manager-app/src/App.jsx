@@ -7,6 +7,7 @@ import QuestionnaireDetail from './components/QuestionnaireDetail';
 import TemplateList from './components/TemplateList';
 import FormBuilder from './components/FormBuilder';
 import Navbar from './components/Navbar';
+import ExceptionManager from './components/ExceptionManager'; 
 
 // ודא שה-CSS המשותף מיובא בקובץ main.jsx
 
