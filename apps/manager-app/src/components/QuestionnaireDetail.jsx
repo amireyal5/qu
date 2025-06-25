@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { doc, getDoc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '../firebase';
-import QuestionRenderer from '../../interviewer-app/src/components/QuestionRenderer'; // נניח שזה קובץ משותף
+import { QuestionRenderer } from 'shared-ui';
 
 function QuestionnaireDetail() {
   const { id } = useParams();
