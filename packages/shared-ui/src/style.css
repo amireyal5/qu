@@ -399,3 +399,31 @@ tbody tr:hover {
     grid-template-columns: 1fr;
   }
 }
+/* --- Icon Styling --- */
+.navbar-links a,
+.navbar-user-info span,
+.navbar-user-info button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px; /* רווח בין האייקון לטקסט */
+}
+
+.navbar-links i,
+.navbar-user-info i {
+  font-size: 1.1rem;
+  color: var(--text-secondary);
+  transition: color 0.2s;
+}
+
+.navbar-links a:hover i,
+.navbar-links a.active i {
+  color: var(--primary-blue);
+}
+
+.navbar-user-info .btn-secondary i {
+    color: var(--primary-blue);
+}
+
+.navbar-user-info .btn-secondary:hover i {
+    color: white;
+}
