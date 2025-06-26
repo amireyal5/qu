@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 
@@ -9,6 +9,7 @@ import TemplateList from './components/TemplateList';
 import FormBuilder from './components/FormBuilder';
 import ExceptionManager from './components/ExceptionManager';
 import Navbar from './components/Navbar';
+import HelpCenter from './components/HelpCenter'; // ייבוא חדש
 
 function App() {
   return (
@@ -22,14 +23,17 @@ function App() {
 
 function AppContent() {
   const { currentUser, loading } = useAuth();
-  
+  const [isHelpOpen, setIsHelpOpen] = useState(false); // State לניהול חלון העזרה
+
   if (loading) {
     return <div className="page-container" style={{ textAlign: 'center' }}><h2>טוען...</h2></div>;
   }
 
   return (
     <>
-      {currentUser && <Navbar />}
+      {/* העברת הפונקציה לפתיחת המודאל ל-Navbar */}
+      {currentUser && <Navbar onHelpClick={() => setIsHelpOpen(true)} />}
+      
       <div className="container">
         <Routes>
           {!currentUser && (
@@ -51,6 +55,9 @@ function AppContent() {
           )}
         </Routes>
       </div>
+
+      {/* הצגת המודאל בתנאי */}
+      {isHelpOpen && <HelpCenter onClose={() => setIsHelpOpen(false)} />}
     </>
   );
 }
