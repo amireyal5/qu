@@ -102,13 +102,19 @@ function QuestionnaireForm() {
         const newAnswers = { ...prev.answers, [name]: checked ? [...currentAnswers, value] : currentAnswers.filter(item => item !== value) };
         return { ...prev, answers: newAnswers };
     });
-  };
-
-  const resetForm = () => {
+ 
+ const resetForm = () => {
+    // איפוס מלא של כל השדות ב-formData
     setFormData({
-      intervieweeId: '', intervieweeFirstName: '', intervieweeLastName: '', intervieweePhone: '', status: '',
+      intervieweeId: '',
+      intervieweeFirstName: '',
+      intervieweeLastName: '',
+      intervieweePhone: '', // <-- מוודאים שגם זה מתאפס
+      status: '',
+      // מאפסים את התשובות הדינמיות על בסיס התבנית
       answers: template ? template.questions.reduce((acc, q) => ({ ...acc, [q.id]: q.type === 'checkbox' ? [] : '' }), {}) : {}
     });
+    // איפוס הודעת השגיאה של הת.ז
     setIdError('');
   };
 
