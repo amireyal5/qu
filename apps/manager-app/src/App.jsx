@@ -9,7 +9,7 @@ import TemplateList from './components/TemplateList';
 import FormBuilder from './components/FormBuilder';
 import ExceptionManager from './components/ExceptionManager';
 import Navbar from './components/Navbar';
-import HelpCenter from './components/HelpCenter'; // ייבוא חדש
+import HelpCenter from './components/HelpCenter';
 
 function App() {
   return (
@@ -26,15 +26,21 @@ function AppContent() {
   const [isHelpOpen, setIsHelpOpen] = useState(false); // State לניהול חלון העזרה
 
   if (loading) {
-    return <div className="page-container" style={{ textAlign: 'center' }}><h2>טוען...</h2></div>;
+    return <div className="page-container" style={{ textAlign: 'center', justifyContent: 'center' }}><h2>טוען...</h2></div>;
   }
 
   return (
     <>
-      {/* העברת הפונקציה לפתיחת המודאל ל-Navbar */}
-      {currentUser && <Navbar onHelpClick={() => setIsHelpOpen(true)} />}
+      {/* התיקון כאן: מעבירים את הפונקציה onHelpClick כ-prop */}
+      {currentUser && (
+        <header style={{ backgroundColor: 'var(--white-bg)', boxShadow: 'var(--container-shadow)' }}>
+          <div className="container">
+            <Navbar onHelpClick={() => setIsHelpOpen(true)} />
+          </div>
+        </header>
+      )}
       
-      <div className="container">
+      <main className="container" style={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
         <Routes>
           {!currentUser && (
             <>
@@ -54,7 +60,7 @@ function AppContent() {
             </>
           )}
         </Routes>
-      </div>
+      </main>
 
       {/* הצגת המודאל בתנאי */}
       {isHelpOpen && <HelpCenter onClose={() => setIsHelpOpen(false)} />}
