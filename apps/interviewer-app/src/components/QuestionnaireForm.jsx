@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { collection, query, where, onSnapshot, orderBy, doc, updateDoc, getDoc, setDoc, writeBatch, addDoc, deleteDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, serverTimestamp, writeBatch, addDoc, collection } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../context/AuthContext';
 import QuestionRenderer from './QuestionRenderer';
@@ -139,16 +139,23 @@ function QuestionnaireForm() {
     setIsSubmitting(true);
     const batch = writeBatch(db);
     const finalStatus = formData.status || 'בוצע';
+    const isPartialSubmission = ['אין מענה טלפוני', 'מספר לא תקין', 'מסרב להשיב'].includes(finalStatus);
+    const finalAnswers = isPartialSubmission ? {} : formData.answers;
+
     const submissionData = {
-      ...formData, status: finalStatus,
+      ...formData,
+      answers: finalAnswers,
+      status: finalStatus,
       interviewerName: `${userProfile.firstName} ${userProfile.lastName}`,
-      interviewerUid: currentUser.uid, submissionTimestamp: serverTimestamp(),
+      interviewerUid: currentUser.uid,
+      submissionTimestamp: serverTimestamp(),
       template: { id: templateId, name: template.name, questions: template.questions },
     };
     batch.set(doc(db, "questionnaires", formData.intervieweeId), submissionData);
     batch.set(doc(db, "interviewees", formData.intervieweeId), {
       interviewerName: `${userProfile.firstName} ${userProfile.lastName}`,
-      interviewerUid: currentUser.uid, submissionTimestamp: serverTimestamp(),
+      interviewerUid: currentUser.uid,
+      submissionTimestamp: serverTimestamp(),
     });
     try {
       await batch.commit();
@@ -159,6 +166,7 @@ function QuestionnaireForm() {
   };
   
   const showSaveAsExceptionButton = formData.intervieweeId.length > 0 && idError && !idError.includes("כבר קיים");
+  const areDynamicQuestionsRequired = !['אין מענה טלפוני', 'מספר לא תקין', 'מסרב להשיב'].includes(formData.status);
 
   if (loading) return <div className="page-container" style={{ textAlign: 'center' }}><h2>טוען...</h2></div>;
   if (error) return <div className="page-container validation-message error"><p>{error}</p></div>;
@@ -167,7 +175,9 @@ function QuestionnaireForm() {
   return (
     <div className="page-container form-container questionnaire-view">
       <h2>{template.name}</h2>
-      <form onSubmit={handleSubmit}>
+      <p>נא למלא את כל הפרטים. שדות המסומנים בכוכבית (*) הינם חובה.</p>
+      
+      <form onSubmit={handleSubmit} style={{ marginTop: '2rem' }}>
         <div className="form-grid">
             <div className="form-group">
               <label htmlFor="intervieweeId">ת.ז. מרואיין *</label>
@@ -201,16 +211,19 @@ function QuestionnaireForm() {
         {template.questions?.length > 0 && <hr style={{margin: '2rem 0'}} />}
         
         <div className="form-grid">
-            {template.questions.map(question => (
-              <div key={question.id} style={question.type === 'textarea' ? { gridColumn: '1 / -1' } : {}}>
-                <QuestionRenderer 
-                  question={question}
-                  value={formData.answers[question.id]}
-                  onChange={handleAnswerChange}
-                  onCheckboxChange={handleCheckboxChange} 
-                />
-              </div>
-            ))}
+            {template.questions.map(question => {
+              const isRequired = question.required && areDynamicQuestionsRequired;
+              return (
+                <div key={question.id} style={question.type === 'textarea' ? { gridColumn: '1 / -1' } : {}}>
+                  <QuestionRenderer 
+                    question={{ ...question, required: isRequired }}
+                    value={formData.answers[question.id]}
+                    onChange={handleAnswerChange}
+                    onCheckboxChange={handleCheckboxChange} 
+                  />
+                </div>
+              );
+            })}
         </div>
         
         <div className="actions-bar" style={{justifyContent: 'space-between'}}>
