@@ -427,3 +427,68 @@ tbody tr:hover {
 .navbar-user-info .btn-secondary:hover i {
     color: white;
 }
+/* --- Help Center Modal Styles --- */
+.help-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+.help-modal-content {
+  background: var(--white-bg);
+  width: 80%;
+  max-width: 900px;
+  height: 80vh;
+  border-radius: var(--border-radius);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+.help-modal-close-btn {
+  position: absolute;
+  top: 10px;
+  left: 20px; /* שמאל בגלל RTL */
+  background: none;
+  border: none;
+  font-size: 2.5rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+.help-modal-grid {
+  display: grid;
+  grid-template-columns: 250px 1fr; /* עמודת צד ברוחב קבוע */
+  height: 100%;
+  overflow: hidden;
+}
+.help-modal-sidebar {
+  background-color: var(--light-bg);
+  padding: 20px;
+  border-left: 1px solid var(--border-color);
+  overflow-y: auto;
+}
+.help-modal-sidebar h3 { margin-top: 0; }
+.help-modal-sidebar ul { list-style: none; padding: 0; margin: 0; }
+.help-modal-sidebar li {
+  padding: 12px 15px;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-bottom: 5px;
+  transition: background-color 0.2s;
+}
+.help-modal-sidebar li:hover { background-color: #e9ecef; }
+.help-modal-sidebar li.active {
+  background-color: var(--primary-blue);
+  color: white;
+  font-weight: bold;
+}
+.help-modal-main {
+  padding: 30px;
+  overflow-y: auto;
+}
