@@ -1,30 +1,27 @@
 /* ==========================================================================
-   SHARED UI - style.css - V6.0 (FINAL & COMPLETE VERSION)
+   SHARED UI - style.css - V7.1 (FINAL & CLEAN VERSION)
    ========================================================================== */
 
 /* --- 1. Global Variables & Root Configuration --- */
 :root {
-  --primary-blue: #003366;
+  --primary-blue: #004a94;
   --secondary-blue: #0d6efd;
-  --accent-color: #6f42c1; /* צבע הדגשה חדש - סגול עדין */
-  --light-gray-bg: #f8f9fa; /* רקע מעט יותר כהה ונעים */
+  --accent-color: #6f42c1;
+  --light-bg: #f8f9fa;
   --white-bg: #ffffff;
   --text-primary: #212529;
-  --text-secondary: #5a6a78;
+  --text-secondary: #6c757d;
   --border-color: #dee2e6;
   --success-green: #198754;
-  --danger-red: #bb2d3b;
-  --danger-red-hover: #a52834;
+  --danger-red: #dc3545;
   --warning-yellow: #ffc107;
   --border-radius: 8px;
   --container-shadow: 0 6px 20px rgba(0, 51, 102, 0.08);
-  --input-shadow-focus: 0 0 0 4px rgba(13, 110, 253, 0.25);
-  --max-width-desktop: 1280px;
+  --input-shadow-focus: 0 0 0 3px rgba(13, 110, 253, 0.25);
+  --max-width-desktop: 1400px;
 }
 
-
-
-
+/* --- 2. Base Styles & Typography --- */
 html, body, #root {
   height: 100%;
   margin: 0;
@@ -32,24 +29,39 @@ html, body, #root {
 }
 body {
   direction: rtl;
-  font-family: 'Rubik', sans-serif;
-  background-color: var(--light-gray-bg);
+  font-family: 'Rubik', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background-color: var(--light-bg);
   color: var(--text-primary);
-  font-size: 17px;
-  line-height: 1.7;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  font-size: 16px;
+  line-height: 1.6;
 }
-
-h1, h2, h3, h4 { color: var(--primary-blue); font-weight: 700; margin: 0 0 1rem 0; }
-h1 { font-size: 1.8rem; }
-h2 { font-size: 2rem; border-bottom: 2px solid #eef2f7; padding-bottom: 0.75rem; margin-bottom: 1.5rem; }
-h3 { font-size: 1.5rem; margin-top: 1.5rem; margin-bottom: 1rem; }
-hr { border: none; border-top: 1px solid var(--border-color); opacity: 0.5; }
-p { margin-top: 0; margin-bottom: 1rem; }
-a { color: var(--secondary-blue); text-decoration: none; transition: color 0.2s ease; }
-a:hover { color: var(--primary-blue); }
-
+h1, h2, h3, h4 {
+  color: var(--primary-blue);
+  font-weight: 700;
+  margin: 0 0 1rem 0;
+}
+h2 {
+  font-size: 1.75rem;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 0.75rem;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+h3 { font-size: 1.5rem; }
+hr {
+  border: none;
+  border-top: 1px solid #e9ecef;
+}
+p {
+  margin-top: 0;
+  margin-bottom: 1rem;
+}
+a {
+  color: var(--secondary-blue);
+  text-decoration: none;
+}
 
 /* --- 3. Layout & Containers --- */
 .container {
@@ -77,83 +89,312 @@ a:hover { color: var(--primary-blue); }
   justify-content: space-between;
   align-items: center;
 }
-.navbar-brand a, .navbar-links a { text-decoration: none; color: var(--text-primary); }
-.navbar-brand h1 { margin: 0; border: none; }
-.navbar-links { display: flex; align-items: center; gap: 2.5rem; font-weight: 500; }
-.navbar-user-info { display: flex; align-items: center; gap: 1.5rem; }
-.navbar-user-info span { font-weight: 500; color: var(--text-secondary); display: flex; align-items: center; }
+.navbar-brand a,
+.navbar-links a {
+  text-decoration: none;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.navbar-brand h1 {
+  margin: 0;
+  font-size: 1.6rem;
+  color: var(--primary-blue);
+  border: none;
+}
+.navbar-links {
+  display: flex;
+  align-items: center;
+  gap: 2.5rem;
+  font-weight: 500;
+}
+.navbar-links a:hover {
+  color: var(--primary-blue);
+}
+.navbar-user-info {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+.navbar-user-info span {
+  font-weight: 500;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
 
-/* --- 5. Forms --- */
-.page-container form { display: flex; flex-direction: column; flex-grow: 1; }
-.form-group { margin-bottom: 1.5rem; }
-label { display: block; font-weight: 500; margin-bottom: 0.5rem; color: var(--text-secondary); font-size: 0.95rem; }
-input[type="text"], input[type="email"], input[type="password"], select, textarea {
-  display: block; width: 100%; padding: 14px 20px;
-  font-size: 1rem; border: 2px solid var(--border-color);
-  border-radius: var(--border-radius); box-sizing: border-box; background-color: #fcfdff;
+/* --- 5. Buttons --- */
+.btn,
+button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 22px;
+  font-size: 1rem;
+  font-weight: 500;
+  border-radius: var(--border-radius);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+}
+.btn-primary {
+  background-color: var(--primary-blue);
+  color: white;
+  border-color: var(--primary-blue);
+}
+.btn-primary:hover {
+  background-color: #002b54;
+}
+.btn-secondary {
+  background-color: transparent;
+  color: var(--primary-blue);
+  border-color: var(--primary-blue);
+}
+.btn-secondary:hover {
+  background-color: rgba(0, 51, 102, 0.05);
+}
+.btn-danger {
+  background-color: transparent;
+  color: var(--danger-red);
+  border-color: var(--danger-red);
+}
+.btn-danger:hover {
+  background-color: rgba(220, 53, 69, 0.05);
+}
+.btn-link {
+  border: none;
+  background: none;
+  color: var(--secondary-blue);
+  padding: 0;
+  box-shadow: none;
+}
+.btn-link:hover {
+  text-decoration: underline;
+}
+button:disabled {
+  background-color: #e9ecef;
+  border-color: #e9ecef;
+  color: #6c757d;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+.actions-bar {
+  display: flex;
+  gap: 1rem;
+  margin-top: auto;
+  padding-top: 2rem;
+  border-top: 1px solid #e9ecef;
+}
+.action-link {
+  padding: 6px 14px;
+  background-color: var(--secondary-blue);
+  color: white;
+  text-decoration: none;
+  border-radius: 5px;
+}
+
+/* --- 6. Forms --- */
+.page-container form {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+}
+.form-group {
+  margin-bottom: 1.5rem;
+}
+label {
+  display: block;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+}
+input[type="text"],
+input[type="email"],
+input[type="password"],
+select,
+textarea {
+  display: block;
+  width: 100%;
+  padding: 14px 20px;
+  font-size: 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  box-sizing: border-box;
+  background-color: #fcfdff;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
-input:focus, select:focus, textarea:focus { outline: none; border-color: var(--primary-blue); box-shadow: var(--input-shadow-focus); }
-input:disabled { background-color: #e9ecef; cursor: not-allowed; }
-.radio-group, .checkbox-group { display: flex; flex-direction: column; gap: 12px; padding: 10px 0; }
-.radio-option, .checkbox-option { display: flex; align-items: center; gap: 10px; }
-input[type="radio"], input[type="checkbox"] { width: auto; height: 1.2em; width: 1.2em; }
-.radio-option label, .checkbox-option label { margin-bottom: 0; font-weight: 400; }
-
-/* --- 6. Buttons & Actions --- */
-.btn, button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 28px; font-size: 1.05rem; font-weight: 700; border-radius: var(--border-radius); border: none; cursor: pointer; transition: all 0.2s ease; color: white; }
-.btn:hover, button:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
-button:disabled { background-color: #c0c6cc !important; background-image: none !important; cursor: not-allowed; opacity: 0.7; }
-.btn-primary { background-image: linear-gradient(45deg, #0d6efd 0%, #003366 100%); }
-.btn-delete { background-image: linear-gradient(45deg, #dc3545 0%, #b02a37 100%); }
-.btn-edit { background-color: var(--secondary-blue); color: white; }
-.btn-add { background-image: linear-gradient(45deg, #198754 0%, #146c43 100%); }
-.btn-cancel { background-color: #6c757d; color: white; }
-.btn-logout { padding: 8px 16px; font-size: 0.9rem; background-color: transparent; color: var(--primary-blue); border: 1px solid var(--primary-blue); }
-.btn-logout:hover { background-color: var(--primary-blue); color: var(--white-bg); box-shadow: none; }
-.actions-bar { display: flex; gap: 1rem; margin-top: auto; padding-top: 2rem; border-top: 1px solid #e9ecef; }
-.action-link { padding: 6px 14px; background-color: var(--secondary-blue); color: white; text-decoration: none; border-radius: 5px; }
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: var(--primary-blue);
+  box-shadow: var(--input-shadow-focus);
+}
+input:disabled {
+  background-color: #e9ecef;
+  cursor: not-allowed;
+}
+.radio-group,
+.checkbox-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 10px 0;
+}
+.radio-option,
+.checkbox-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+input[type="radio"],
+input[type="checkbox"] {
+  width: 1.2em;
+  height: 1.2em;
+}
+.radio-option label,
+.checkbox-option label {
+  margin-bottom: 0;
+  font-weight: 400;
+}
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px 30px;
+}
 
 /* --- 7. Lists & Tables --- */
 .list-item {
-  background: #fff; padding: 20px; border: 1px solid var(--border-color);
-  border-radius: var(--border-radius); margin-bottom: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.04);
-  border-left: 5px solid var(--accent-color);
+  background: var(--white-bg);
+  padding: 20px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  margin-bottom: 15px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+  border-left: 4px solid var(--secondary-blue);
   transition: box-shadow 0.3s ease;
 }
-.list-item:hover { box-shadow: var(--container-shadow); }
-.list-item-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed var(--border-color); padding-bottom: 10px; margin-bottom: 15px; }
-.list-item-header .serial { font-weight: 700; font-size: 1.2rem; color: var(--primary-blue); }
-.list-item-header .date { font-size: 0.9rem; color: var(--text-secondary); }
-.list-item-body { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; }
-.table-wrapper { overflow-x: auto; width: 100%; border: 1px solid #e9ecef; border-radius: var(--border-radius); }
-table { width: 100%; border-collapse: collapse; text-align: right; }
-th, td { padding: 16px 20px; border-bottom: 1px solid #e9ecef; white-space: nowrap; }
-th { background-color: #f8f9fa; font-weight: 500; color: var(--primary-blue); }
-tbody tr:last-child td { border-bottom: none; }
-tbody tr:hover { background-color: #f5f7fa; }
-
-/* --- 8. Specific Components --- */
-.validation-message { font-size: 0.9rem; display: block; margin-top: 8px; padding: 8px 12px; border-radius: 4px; }
-.validation-message.error { background-color: #f8d7da; color: var(--danger-red); font-weight: 500; }
-.validation-message.info { background-color: #e9ecef; color: var(--text-secondary); }
-.drag-handle { cursor: grab; margin-left: 15px; color: #aaa; }
-.question-editor { background-color: #f0f4f8; padding: 25px; border-radius: var(--border-radius); margin: 10px 0 20px 0; border: 1px solid #e0e0e0; }
-
-/* --- 9. Responsive Design --- */
-@media (max-width: 992px) { .container { padding: 15px; } .page-container { padding: 25px; } }
-@media (max-width: 768px) { .navbar { flex-direction: column; align-items: flex-start; gap: 1rem; } }
-/* --- New Grid Layout for Forms --- */
-.form-grid {
+.list-item:hover {
+  box-shadow: var(--container-shadow);
+}
+.list-item h3 {
+  margin-top: 0;
+}
+.list-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px dashed var(--border-color);
+  padding-bottom: 10px;
+  margin-bottom: 15px;
+}
+.list-item-header .serial {
+  font-weight: 700;
+  font-size: 1.2rem;
+  color: var(--primary-blue);
+}
+.list-item-header .date {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+.list-item-body {
   display: grid;
-  /* יוצר עמודות גמישות. כל עמודה ברוחב מינימלי של 280px */
-  /* אבל הן יתמלאו כדי לנצל את כל השטח הזמין. */
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 20px 30px; /* רווח אנכי ואופקי בין השדות */
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+}
+.table-wrapper {
+  overflow-x: auto;
+  width: 100%;
+  border: 1px solid #e9ecef;
+  border-radius: var(--border-radius);
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: right;
+}
+th,
+td {
+  padding: 16px 20px;
+  border-bottom: 1px solid #e9ecef;
+  white-space: nowrap;
+}
+th {
+  background-color: #f8f9fa;
+  font-weight: 500;
+  color: var(--primary-blue);
+}
+tbody tr:last-child td {
+  border-bottom: none;
+}
+tbody tr:hover {
+  background-color: #f5f7fa;
 }
 
-/* במסכים קטנים, נחזור לעמודה אחת */
+/* --- 8. Specific Components --- */
+.validation-message {
+  font-size: 0.9rem;
+  display: block;
+  margin-top: 8px;
+  padding: 8px 12px;
+  border-radius: 4px;
+}
+.validation-message.error {
+  background-color: #f8d7da;
+  color: var(--danger-red);
+  font-weight: 500;
+}
+.validation-message.info {
+  background-color: #e9ecef;
+  color: var(--text-secondary);
+}
+.drag-handle {
+  cursor: grab;
+  margin-left: 15px;
+  color: #aaa;
+}
+.question-editor {
+  background-color: #f0f4f8;
+  padding: 25px;
+  border-radius: var(--border-radius);
+  margin: 10px 0 20px 0;
+  border: 1px solid #e0e0e0;
+}
+.form-group-inline {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.form-group-inline input[type="checkbox"] {
+  width: auto;
+}
+.form-group-inline label {
+  margin-bottom: 0;
+}
+
+/* --- 9. Responsive Design --- */
+@media (max-width: 992px) {
+  .container {
+    padding: 15px;
+  }
+  .page-container {
+    padding: 25px;
+  }
+}
 @media (max-width: 768px) {
+  .navbar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
   .form-grid {
     grid-template-columns: 1fr;
   }
