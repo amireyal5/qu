@@ -29,7 +29,7 @@ function HelpCenter({ onClose }) {
       {/* החלון עצמו - e.stopPropagation() מונע סגירה בלחיצה עליו */}
       <div className="רעיון מצוין. שילוב מדריך כזה ישירות במערכת משפר מאוד את חווית המשתמש ומקטין את הצורך בתמיכה.
 
-ההצעה שלי היא לבנות רכיב "עזרה" פשוט ואינטראקטיבי, שhelp-modal-content" onClick={(e) => e.stopPropagation()}>
+        help-modal-content" onClick={(e) => e.stopPropagation()}>
         <button onClick={onClose} className="help-modal-close-btn">×</button>
         
         <div className="help-modal-grid">
