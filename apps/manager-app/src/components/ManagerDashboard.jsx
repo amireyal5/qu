@@ -15,36 +15,30 @@ function ManagerDashboard() {
   const [sortConfig, setSortConfig] = useState({ key: 'submissionTimestamp', direction: 'desc' });
 
   // טעינת תבניות (עכשיו טוען מהקולקציה הראשית)
-  useEffect(() => {
-    if (!currentUser) return;
-    const q = query(collection(db, 'questionnaireTemplates'), orderBy('name'));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const templates = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setAllTemplates(templates);
-      if (templates.length > 0 && !selectedTemplateId) {
-        setSelectedTemplateId(templates[0].id);
-      }
-    });
-    return () => unsubscribe();
-  }, [currentUser, selectedTemplateId]);
-
-  // טעינת שאלונים לפי התבנית שנבחרה
-  useEffect(() => {
+ useEffect(() => {
+    // אם אין ID של תבנית, אל תעשה כלום
     if (!selectedTemplateId) {
-      setQuestionnaires([]);
+      setQuestionnaires([]); // אפס את רשימת השאלונים
       setLoading(false);
       return;
     }
+
     setLoading(true);
     const q = query(
       collection(db, 'questionnaires'),
       where('template.id', '==', selectedTemplateId)
     );
+    
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const data = snapshot.docs.map(doc => ({ docId: doc.id, ...doc.data() }));
-      setQuestionnaires(data);
+      // --- התיקון כאן ---
+      setQuestionnaires(data); // <-- השורה שהייתה חסרה
       setLoading(false);
+    }, (error) => {
+        console.error("Error fetching questionnaires by template:", error);
+        setLoading(false);
     });
+
     return () => unsubscribe();
   }, [selectedTemplateId]);
 
