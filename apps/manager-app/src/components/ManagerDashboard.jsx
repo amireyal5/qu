@@ -7,38 +7,47 @@ import { useAuth } from '../context/AuthContext';
 
 function ManagerDashboard() {
   const { currentUser } = useAuth();
-  const [allQuestionnaires, setAllQuestionnaires] = useState([]);
   const [allTemplates, setAllTemplates] = useState([]);
   const [selectedTemplateId, setSelectedTemplateId] = useState('');
+  const [questionnaires, setQuestionnaires] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortConfig, setSortConfig] = useState({ key: 'submissionTimestamp', direction: 'desc' });
 
-  // טעינת תבניות (עכשיו טוען מהקולקציה הראשית)
- useEffect(() => {
-    // אם אין ID של תבנית, אל תעשה כלום
+  useEffect(() => {
+    if (!currentUser) return;
+    const q = query(collection(db, 'questionnaireTemplates'), orderBy('name'));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const templates = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setAllTemplates(templates);
+      if (templates.length > 0 && !selectedTemplateId) {
+        setSelectedTemplateId(templates[0].id);
+      } else if (templates.length === 0) {
+        setLoading(false);
+      }
+    });
+    return () => unsubscribe();
+  }, [currentUser, selectedTemplateId]);
+
+  useEffect(() => {
     if (!selectedTemplateId) {
-      setQuestionnaires([]); // אפס את רשימת השאלונים
+      setQuestionnaires([]);
       setLoading(false);
       return;
     }
-
     setLoading(true);
     const q = query(
       collection(db, 'questionnaires'),
       where('template.id', '==', selectedTemplateId)
     );
-    
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const data = snapshot.docs.map(doc => ({ docId: doc.id, ...doc.data() }));
-      // --- התיקון כאן ---
-      setQuestionnaires(data); // <-- השורה שהייתה חסרה
+      setQuestionnaires(data);
       setLoading(false);
     }, (error) => {
-        console.error("Error fetching questionnaires by template:", error);
-        setLoading(false);
+      console.error("Error fetching questionnaires by template:", error);
+      setLoading(false);
     });
-
     return () => unsubscribe();
   }, [selectedTemplateId]);
 
@@ -84,13 +93,9 @@ function ManagerDashboard() {
   };
 
   const exportToExcel = () => {
-    if (processedData.length === 0) {
-      alert("אין נתונים לייצוא.");
-      return;
-    }
+    if (processedData.length === 0) { alert("אין נתונים לייצוא."); return; }
     const headers = ['#', 'ת.ז. מרואיין', 'שם מלא (מרואיין)', 'טלפון', 'סטטוס', 'שם המראיין', 'תאריך הגשה'];
     dynamicColumns.forEach(col => headers.push(col.label));
-
     const dataToExport = processedData.map((q, index) => {
       const row = [
         index + 1, q.intervieweeId, `${q.intervieweeLastName || ''} ${q.intervieweeFirstName || ''}`,
@@ -103,11 +108,9 @@ function ManagerDashboard() {
       });
       return row;
     });
-
     const worksheet = XLSX.utils.aoa_to_sheet([headers, ...dataToExport]);
     worksheet['!cols'] = headers.map(header => ({ wch: Math.max(header.length, 18) }));
-    worksheet['!rtl'] = true; // <-- הגדרת כיוון מימין לשמאל
-
+    worksheet['!rtl'] = true;
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "שאלונים");
     const templateName = allTemplates.find(t => t.id === selectedTemplateId)?.name || 'שאלונים';
@@ -131,13 +134,12 @@ function ManagerDashboard() {
         </div>
         <div className="form-group" style={{flex: 2}}>
           <label>חיפוש חופשי:</label>
-          <input type="text" placeholder="חפש לפי שם, ת.ז, מראיין..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+          <input type="text" placeholder="חפש..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
         </div>
         <div className="form-group">
           <button onClick={exportToExcel} className="btn btn-add">יצא לאקסל</button>
         </div>
       </div>
-
       <div className="table-wrapper">
         <table>
           <thead>
@@ -169,7 +171,7 @@ function ManagerDashboard() {
                 </tr>
               ))
             ) : (
-              <tr><td colSpan={5 + dynamicColumns.length}>לא נמצאו שאלונים.</td></tr>
+              <tr><td colSpan={5 + dynamicColumns.length}>לא נמצאו שאלונים עבור תבנית זו.</td></tr>
             )}
           </tbody>
         </table>
