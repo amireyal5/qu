@@ -3,64 +3,70 @@ import { collection, onSnapshot, query, where, orderBy } from 'firebase/firestor
 import { db } from '../firebase';
 import { Link } from 'react-router-dom';
 import * as XLSX from 'xlsx';
+import { useAuth } from '../context/AuthContext';
 
 function ManagerDashboard() {
+  const { currentUser } = useAuth();
   const [allQuestionnaires, setAllQuestionnaires] = useState([]);
-  const [availableTemplates, setAvailableTemplates] = useState([]);
+  const [allTemplates, setAllTemplates] = useState([]);
   const [selectedTemplateId, setSelectedTemplateId] = useState('');
   const [loading, setLoading] = useState(true);
-  
-  // --- ה-states שהיו חסרים ---
   const [searchTerm, setSearchTerm] = useState('');
   const [sortConfig, setSortConfig] = useState({ key: 'submissionTimestamp', direction: 'desc' });
 
-  // שלב 1: טען את כל השאלונים פעם אחת
+  // טעינת תבניות (עכשיו טוען מהקולקציה הראשית)
   useEffect(() => {
-    const q = query(collection(db, 'questionnaires'), orderBy('submissionTimestamp', 'desc'));
+    if (!currentUser) return;
+    const q = query(collection(db, 'questionnaireTemplates'), orderBy('name'));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const templates = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setAllTemplates(templates);
+      if (templates.length > 0 && !selectedTemplateId) {
+        setSelectedTemplateId(templates[0].id);
+      }
+    });
+    return () => unsubscribe();
+  }, [currentUser, selectedTemplateId]);
+
+  // טעינת שאלונים לפי התבנית שנבחרה
+  useEffect(() => {
+    if (!selectedTemplateId) {
+      setQuestionnaires([]);
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    const q = query(
+      collection(db, 'questionnaires'),
+      where('template.id', '==', selectedTemplateId)
+    );
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const data = snapshot.docs.map(doc => ({ docId: doc.id, ...doc.data() }));
-      setAllQuestionnaires(data);
-      
-      // שלב 2: בנה את רשימת התבניות הייחודיות מתוך השאלונים
-      const templatesMap = new Map();
-      data.forEach(q => {
-        if (q.template?.id && q.template?.name) {
-          templatesMap.set(q.template.id, q.template.name);
-        }
-      });
-      const uniqueTemplates = Array.from(templatesMap, ([id, name]) => ({ id, name }));
-      setAvailableTemplates(uniqueTemplates);
-
-      if (uniqueTemplates.length > 0 && !selectedTemplateId) {
-        setSelectedTemplateId(uniqueTemplates[0].id);
-      }
+      setQuestionnaires(data);
       setLoading(false);
     });
     return () => unsubscribe();
-  }, []); // תלות ריקה כדי שירוץ פעם אחת
+  }, [selectedTemplateId]);
 
-  // שלב 3: סנן את השאלונים להצגה לפי התבנית שנבחרה
-  const filteredByTemplate = useMemo(() => {
-    if (!selectedTemplateId) return [];
-    return allQuestionnaires.filter(q => q.template?.id === selectedTemplateId);
-  }, [selectedTemplateId, allQuestionnaires]);
+  const dynamicColumns = useMemo(() => {
+    if (!selectedTemplateId || allTemplates.length === 0) return [];
+    const currentTemplate = allTemplates.find(t => t.id === selectedTemplateId);
+    return currentTemplate?.questions.filter(q => q.type === 'radio' && q.showInDashboard) || [];
+  }, [selectedTemplateId, allTemplates]);
 
-  // שלב 4: החל חיפוש ומיון על הרשימה המסוננת
   const processedData = useMemo(() => {
-    let dataToProcess = [...filteredByTemplate];
-    
+    let filteredData = [...questionnaires];
     if (searchTerm) {
       const lowercasedFilter = searchTerm.toLowerCase();
-      dataToProcess = dataToProcess.filter(item =>
-        (item.intervieweeId && item.intervieweeId.includes(lowercasedFilter)) ||
-        (item.intervieweeFirstName && item.intervieweeFirstName.toLowerCase().includes(lowercasedFilter)) ||
-        (item.intervieweeLastName && item.intervieweeLastName.toLowerCase().includes(lowercasedFilter)) ||
-        (item.interviewerName && item.interviewerName.toLowerCase().includes(lowercasedFilter))
+      filteredData = filteredData.filter(item =>
+        (item.intervieweeId?.includes(lowercasedFilter)) ||
+        (item.intervieweeFirstName?.toLowerCase().includes(lowercasedFilter)) ||
+        (item.intervieweeLastName?.toLowerCase().includes(lowercasedFilter)) ||
+        (item.interviewerName?.toLowerCase().includes(lowercasedFilter))
       );
     }
-
     if (sortConfig.key) {
-      dataToProcess.sort((a, b) => {
+      filteredData.sort((a, b) => {
         let aValue = a[sortConfig.key];
         let bValue = b[sortConfig.key];
         if (sortConfig.key === 'submissionTimestamp') {
@@ -72,8 +78,8 @@ function ManagerDashboard() {
         return 0;
       });
     }
-    return dataToProcess;
-  }, [filteredByTemplate, searchTerm, sortConfig]);
+    return filteredData;
+  }, [questionnaires, searchTerm, sortConfig]);
 
   const requestSort = (key) => {
     let direction = 'asc';
@@ -83,8 +89,41 @@ function ManagerDashboard() {
     setSortConfig({ key, direction });
   };
 
-  const exportToExcel = () => { /* ... ללא שינוי ... */ };
-  const getSortIndicator = (key) => { /* ... ללא שינוי ... */ };
+  const exportToExcel = () => {
+    if (processedData.length === 0) {
+      alert("אין נתונים לייצוא.");
+      return;
+    }
+    const headers = ['#', 'ת.ז. מרואיין', 'שם מלא (מרואיין)', 'טלפון', 'סטטוס', 'שם המראיין', 'תאריך הגשה'];
+    dynamicColumns.forEach(col => headers.push(col.label));
+
+    const dataToExport = processedData.map((q, index) => {
+      const row = [
+        index + 1, q.intervieweeId, `${q.intervieweeLastName || ''} ${q.intervieweeFirstName || ''}`,
+        q.intervieweePhone || '', q.status || 'בוצע', q.interviewerName,
+        q.submissionTimestamp?.toDate().toLocaleString('he-IL') || ''
+      ];
+      dynamicColumns.forEach(col => {
+        const answer = q.answers[col.id];
+        row.push(Array.isArray(answer) ? answer.join(', ') : (answer || '-'));
+      });
+      return row;
+    });
+
+    const worksheet = XLSX.utils.aoa_to_sheet([headers, ...dataToExport]);
+    worksheet['!cols'] = headers.map(header => ({ wch: Math.max(header.length, 18) }));
+    worksheet['!rtl'] = true; // <-- הגדרת כיוון מימין לשמאל
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "שאלונים");
+    const templateName = allTemplates.find(t => t.id === selectedTemplateId)?.name || 'שאלונים';
+    XLSX.writeFile(workbook, `${templateName}.xlsx`);
+  };
+
+  const getSortIndicator = (key) => {
+    if (sortConfig.key !== key) return '↕️';
+    return sortConfig.direction === 'asc' ? '🔼' : '🔽';
+  };
 
   return (
     <div className="page-container">
@@ -93,7 +132,7 @@ function ManagerDashboard() {
         <div className="form-group" style={{flex: 1}}>
           <label>הצג שאלונים עבור תבנית:</label>
           <select value={selectedTemplateId} onChange={(e) => setSelectedTemplateId(e.target.value)}>
-            {availableTemplates.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+            {allTemplates.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
           </select>
         </div>
         <div className="form-group" style={{flex: 2}}>
@@ -112,23 +151,31 @@ function ManagerDashboard() {
               <th onClick={() => requestSort('docId')}>#</th>
               <th onClick={() => requestSort('intervieweeLastName')}>שם מלא (מרואיין) {getSortIndicator('intervieweeLastName')}</th>
               <th onClick={() => requestSort('interviewerName')}>שם המראיין {getSortIndicator('interviewerName')}</th>
+              <th onClick={() => requestSort('status')}>סטטוס {getSortIndicator('status')}</th>
               <th onClick={() => requestSort('submissionTimestamp')}>מועד הגשה {getSortIndicator('submissionTimestamp')}</th>
+              {dynamicColumns.map(col => (
+                <th key={col.id} onClick={() => requestSort(`answers.${col.id}`)}>{col.label} {getSortIndicator(`answers.${col.id}`)}</th>
+              ))}
             </tr>
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan="4">טוען...</td></tr>
+              <tr><td colSpan={5 + dynamicColumns.length}>טוען...</td></tr>
             ) : processedData.length > 0 ? (
               processedData.map((q, index) => (
                 <tr key={q.docId}>
                   <td>{index + 1}</td>
                   <td><Link to={`/questionnaire/${q.docId}`}>{`${q.intervieweeLastName || ''} ${q.intervieweeFirstName || ''}`}</Link></td>
                   <td>{q.interviewerName}</td>
+                  <td>{q.status || 'בוצע'}</td>
                   <td>{q.submissionTimestamp?.toDate().toLocaleString('he-IL')}</td>
+                  {dynamicColumns.map(col => (
+                    <td key={col.id}>{q.answers[col.id] || '-'}</td>
+                  ))}
                 </tr>
               ))
             ) : (
-              <tr><td colSpan="4">לא נמצאו שאלונים.</td></tr>
+              <tr><td colSpan={5 + dynamicColumns.length}>לא נמצאו שאלונים.</td></tr>
             )}
           </tbody>
         </table>
