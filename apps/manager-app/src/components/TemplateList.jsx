@@ -54,23 +54,36 @@ function TemplateList() {
             </tr>
           </thead>
           <tbody>
-            {templates.map(template => (
-              <tr key={template.id}>
-                <td>{template.name}</td>
-                <td>{template.questions?.length || 0}</td>
-                <td>{/* ... סטטוס ... */}</td>
-                <td style={{display: 'flex', gap: '10px'}}>
-                  <Link to={`/form-builder/${template.id}`} className="btn btn-secondary">ערוך</Link>
-                  <button onClick={() => toggleActiveStatus(template.id, template.isActive)} className="btn btn-secondary">
-                    {template.isActive ? 'השבת' : 'הפעל'}
-                  </button>
-                  {/* --- כפתור מחיקה חדש --- */}
-                  <button onClick={() => handleDeleteTemplate(template.id, template.name)} className="btn btn-danger">
-                    מחק
-                  </button>
-                </td>
+            {templates.length > 0 ? (
+              templates.map(template => (
+                <tr key={template.id}>
+                  <td>{template.name}</td>
+                  <td>{template.questions?.length || 0}</td>
+                  <td>
+                    {/* --- החלק שהיה חסר --- */}
+                    <span style={{
+                      color: template.isActive ? 'var(--success-green)' : 'var(--danger-red)',
+                      fontWeight: 'bold'
+                    }}>
+                      {template.isActive ? 'פעיל' : 'לא פעיל'}
+                    </span>
+                  </td>
+                  <td style={{display: 'flex', gap: '10px'}}>
+                    <Link to={`/form-builder/${template.id}`} className="btn btn-secondary">ערוך</Link>
+                    <button onClick={() => toggleActiveStatus(template.id, template.isActive)} className="btn btn-secondary">
+                      {template.isActive ? 'השבת' : 'הפעל'}
+                    </button>
+                    <button onClick={() => handleDeleteTemplate(template.id, template.name)} className="btn btn-danger">
+                      מחק
+                    </button>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan="4" style={{ textAlign: 'center' }}>לא נמצאו תבניות.</td>
               </tr>
-            ))}
+            )}
           </tbody>
         </table>
       </div>
