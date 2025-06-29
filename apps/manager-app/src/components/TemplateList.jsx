@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { collection, onSnapshot, query, orderBy, doc, updateDoc, deleteDoc } from 'firebase/firestore'; // הוספת deleteDoc
+import { collection, onSnapshot, query, orderBy, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -12,9 +12,11 @@ function TemplateList() {
 
   useEffect(() => {
     if (!currentUser) { setLoading(false); return; }
+    
     const q = query(collection(db, 'questionnaireTemplates'), orderBy('name'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      setTemplates(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setTemplates(data);
       setLoading(false);
     });
     return () => unsubscribe();
@@ -22,10 +24,11 @@ function TemplateList() {
 
   const toggleActiveStatus = async (templateId, currentStatus) => {
     const templateRef = doc(db, "questionnaireTemplates", templateId);
-    await updateDoc(templateRef, { isActive: !currentStatus });
+    await updateDoc(templateRef, {
+      isActive: !currentStatus
+    });
   };
 
-  // --- פונקציה חדשה למחיקת תבנית ---
   const handleDeleteTemplate = async (templateId, templateName) => {
     if (window.confirm(`האם אתה בטוח שברצונך למחוק את התבנית "${templateName}"? פעולה זו אינה הפיכה.`)) {
       try {
@@ -42,7 +45,14 @@ function TemplateList() {
 
   return (
     <div className="page-container">
-      {/* ... כותרת וכפתור יצירה ... */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+        <h2>ניהול תבניות שאלונים</h2>
+        {/* --- הכפתור שהוחזר --- */}
+        <button onClick={() => navigate('/form-builder/new')} className="btn btn-primary">
+          + צור שאלון חדש
+        </button>
+      </div>
+      
       <div className="table-wrapper">
         <table>
           <thead>
@@ -60,7 +70,6 @@ function TemplateList() {
                   <td>{template.name}</td>
                   <td>{template.questions?.length || 0}</td>
                   <td>
-                    {/* --- החלק שהיה חסר --- */}
                     <span style={{
                       color: template.isActive ? 'var(--success-green)' : 'var(--danger-red)',
                       fontWeight: 'bold'
