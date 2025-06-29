@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { collection, onSnapshot, query, where, orderBy } from 'firebase/firestore';
+import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
 import { db } from '../firebase';
 import { Link } from 'react-router-dom';
 import * as XLSX from 'xlsx';
@@ -7,29 +7,29 @@ import { useAuth } from '../context/AuthContext';
 
 function ManagerDashboard() {
   const { currentUser } = useAuth();
-  const [allTemplates, setAllTemplates] = useState([]);
+  const [allQuestionnaires, setAllQuestionnaires] = useState([]);
+  const [availableTemplates, setAvailableTemplates] = useState([]);
   const [selectedTemplateId, setSelectedTemplateId] = useState('');
-  const [questionnaires, setQuestionnaires] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortConfig, setSortConfig] = useState({ key: 'submissionTimestamp', direction: 'desc' });
 
   useEffect(() => {
-    if (!currentUser) return;
+    if (!currentUser) {
+      setLoading(false);
+      return;
+    }
 
     setLoading(true);
-    // שאילתה שמביאה את *כל* השאלונים, ממוינים לפי תאריך
     const q = query(collection(db, 'questionnaires'), orderBy('submissionTimestamp', 'desc'));
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const allData = snapshot.docs.map(doc => ({ docId: doc.id, ...doc.data() }));
       setAllQuestionnaires(allData);
 
-      // --- בניית רשימת התבניות הייחודיות מתוך הנתונים ---
       const templatesMap = new Map();
       allData.forEach(questionnaire => {
         if (questionnaire.template?.id && questionnaire.template?.name) {
-          // המפה תדאג אוטומטית שלא יהיו כפילויות
           templatesMap.set(questionnaire.template.id, questionnaire.template.name);
         }
       });
@@ -37,7 +37,6 @@ function ManagerDashboard() {
       const uniqueTemplates = Array.from(templatesMap, ([id, name]) => ({ id, name }));
       setAvailableTemplates(uniqueTemplates);
 
-      // אם זו טעינה ראשונה ואין תבנית נבחרת, בחר את הראשונה
       if (uniqueTemplates.length > 0 && !selectedTemplateId) {
         setSelectedTemplateId(uniqueTemplates[0].id);
       }
@@ -49,19 +48,19 @@ function ManagerDashboard() {
     });
 
     return () => unsubscribe();
-  }, [currentUser, selectedTemplateId]); // תלות ב-selectedTemplateId כדי לאתחל אותו נכון
+  }, [currentUser]);
 
-  // --- לוגיקת הסינון והעיבוד ---
+  const filteredByTemplate = useMemo(() => {
+    if (!selectedTemplateId) return allQuestionnaires; // אם לא נבחרה תבנית, הצג הכל
+    return allQuestionnaires.filter(q => q.template?.id === selectedTemplateId);
+  }, [selectedTemplateId, allQuestionnaires]);
+
   const processedData = useMemo(() => {
-    // התחל עם סינון לפי התבנית שנבחרה
-    let filteredData = selectedTemplateId 
-      ? allQuestionnaires.filter(q => q.template?.id === selectedTemplateId)
-      : allQuestionnaires;
-
-    // החל חיפוש
+    let dataToProcess = [...filteredByTemplate];
+    
     if (searchTerm) {
       const lowercasedFilter = searchTerm.toLowerCase();
-      filteredData = filteredData.filter(item =>
+      dataToProcess = dataToProcess.filter(item =>
         (item.intervieweeId?.includes(lowercasedFilter)) ||
         (item.intervieweeFirstName?.toLowerCase().includes(lowercasedFilter)) ||
         (item.intervieweeLastName?.toLowerCase().includes(lowercasedFilter)) ||
@@ -69,9 +68,8 @@ function ManagerDashboard() {
       );
     }
 
-    // החל מיון
     if (sortConfig.key) {
-      filteredData.sort((a, b) => {
+      dataToProcess.sort((a, b) => {
         let aValue = a[sortConfig.key];
         let bValue = b[sortConfig.key];
         if (sortConfig.key === 'submissionTimestamp') {
@@ -83,69 +81,14 @@ function ManagerDashboard() {
         return 0;
       });
     }
-    return filteredData;
-  }, [allQuestionnaires, selectedTemplateId, searchTerm, sortConfig]);
+    return dataToProcess;
+  }, [filteredByTemplate, searchTerm, sortConfig]);
 
   const dynamicColumns = useMemo(() => {
-    if (!selectedTemplateId || availableTemplates.length === 0) return [];
+    if (!selectedTemplateId) return [];
     const currentTemplateData = allQuestionnaires.find(q => q.template?.id === selectedTemplateId)?.template;
     return currentTemplateData?.questions?.filter(q => q.type === 'radio' && q.showInDashboard) || [];
   }, [selectedTemplateId, allQuestionnaires]);
-
-  useEffect(() => {
-    if (!selectedTemplateId) {
-      setQuestionnaires([]);
-      setLoading(false);
-      return;
-    }
-    setLoading(true);
-    const q = query(
-      collection(db, 'questionnaires'),
-      where('template.id', '==', selectedTemplateId)
-    );
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const data = snapshot.docs.map(doc => ({ docId: doc.id, ...doc.data() }));
-      setQuestionnaires(data);
-      setLoading(false);
-    }, (error) => {
-      console.error("Error fetching questionnaires by template:", error);
-      setLoading(false);
-    });
-    return () => unsubscribe();
-  }, [selectedTemplateId]);
-
-  const dynamicColumns = useMemo(() => {
-    if (!selectedTemplateId || allTemplates.length === 0) return [];
-    const currentTemplate = allTemplates.find(t => t.id === selectedTemplateId);
-    return currentTemplate?.questions.filter(q => q.type === 'radio' && q.showInDashboard) || [];
-  }, [selectedTemplateId, allTemplates]);
-
-  const processedData = useMemo(() => {
-    let filteredData = [...questionnaires];
-    if (searchTerm) {
-      const lowercasedFilter = searchTerm.toLowerCase();
-      filteredData = filteredData.filter(item =>
-        (item.intervieweeId?.includes(lowercasedFilter)) ||
-        (item.intervieweeFirstName?.toLowerCase().includes(lowercasedFilter)) ||
-        (item.intervieweeLastName?.toLowerCase().includes(lowercasedFilter)) ||
-        (item.interviewerName?.toLowerCase().includes(lowercasedFilter))
-      );
-    }
-    if (sortConfig.key) {
-      filteredData.sort((a, b) => {
-        let aValue = a[sortConfig.key];
-        let bValue = b[sortConfig.key];
-        if (sortConfig.key === 'submissionTimestamp') {
-            aValue = aValue?.toDate() || 0;
-            bValue = bValue?.toDate() || 0;
-        }
-        if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
-        if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
-        return 0;
-      });
-    }
-    return filteredData;
-  }, [questionnaires, searchTerm, sortConfig]);
 
   const requestSort = (key) => {
     let direction = 'asc';
@@ -156,9 +99,13 @@ function ManagerDashboard() {
   };
 
   const exportToExcel = () => {
-    if (processedData.length === 0) { alert("אין נתונים לייצוא."); return; }
+    if (processedData.length === 0) {
+      alert("אין נתונים לייצוא.");
+      return;
+    }
     const headers = ['#', 'ת.ז. מרואיין', 'שם מלא (מרואיין)', 'טלפון', 'סטטוס', 'שם המראיין', 'תאריך הגשה'];
     dynamicColumns.forEach(col => headers.push(col.label));
+
     const dataToExport = processedData.map((q, index) => {
       const row = [
         index + 1, q.intervieweeId, `${q.intervieweeLastName || ''} ${q.intervieweeFirstName || ''}`,
@@ -171,12 +118,14 @@ function ManagerDashboard() {
       });
       return row;
     });
+
     const worksheet = XLSX.utils.aoa_to_sheet([headers, ...dataToExport]);
     worksheet['!cols'] = headers.map(header => ({ wch: Math.max(header.length, 18) }));
     worksheet['!rtl'] = true;
+
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "שאלונים");
-    const templateName = allTemplates.find(t => t.id === selectedTemplateId)?.name || 'שאלונים';
+    const templateName = availableTemplates.find(t => t.id === selectedTemplateId)?.name || 'כל-השאלונים';
     XLSX.writeFile(workbook, `${templateName}.xlsx`);
   };
 
@@ -192,17 +141,19 @@ function ManagerDashboard() {
         <div className="form-group" style={{flex: 1}}>
           <label>הצג שאלונים עבור תבנית:</label>
           <select value={selectedTemplateId} onChange={(e) => setSelectedTemplateId(e.target.value)}>
-            {allTemplates.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+            <option value="">הצג הכל</option>
+            {availableTemplates.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
           </select>
         </div>
         <div className="form-group" style={{flex: 2}}>
           <label>חיפוש חופשי:</label>
-          <input type="text" placeholder="חפש..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+          <input type="text" placeholder="חפש לפי שם, ת.ז, מראיין..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
         </div>
         <div className="form-group">
           <button onClick={exportToExcel} className="btn btn-add">יצא לאקסל</button>
         </div>
       </div>
+
       <div className="table-wrapper">
         <table>
           <thead>
@@ -234,7 +185,7 @@ function ManagerDashboard() {
                 </tr>
               ))
             ) : (
-              <tr><td colSpan={5 + dynamicColumns.length}>לא נמצאו שאלונים עבור תבנית זו.</td></tr>
+              <tr><td colSpan={5 + dynamicColumns.length}>לא נמצאו שאלונים.</td></tr>
             )}
           </tbody>
         </table>
