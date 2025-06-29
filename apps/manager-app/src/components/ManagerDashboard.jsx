@@ -16,18 +16,81 @@ function ManagerDashboard() {
 
   useEffect(() => {
     if (!currentUser) return;
-    const q = query(collection(db, 'questionnaireTemplates'), orderBy('name'));
+
+    setLoading(true);
+    // שאילתה שמביאה את *כל* השאלונים, ממוינים לפי תאריך
+    const q = query(collection(db, 'questionnaires'), orderBy('submissionTimestamp', 'desc'));
+
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const templates = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setAllTemplates(templates);
-      if (templates.length > 0 && !selectedTemplateId) {
-        setSelectedTemplateId(templates[0].id);
-      } else if (templates.length === 0) {
-        setLoading(false);
+      const allData = snapshot.docs.map(doc => ({ docId: doc.id, ...doc.data() }));
+      setAllQuestionnaires(allData);
+
+      // --- בניית רשימת התבניות הייחודיות מתוך הנתונים ---
+      const templatesMap = new Map();
+      allData.forEach(questionnaire => {
+        if (questionnaire.template?.id && questionnaire.template?.name) {
+          // המפה תדאג אוטומטית שלא יהיו כפילויות
+          templatesMap.set(questionnaire.template.id, questionnaire.template.name);
+        }
+      });
+      
+      const uniqueTemplates = Array.from(templatesMap, ([id, name]) => ({ id, name }));
+      setAvailableTemplates(uniqueTemplates);
+
+      // אם זו טעינה ראשונה ואין תבנית נבחרת, בחר את הראשונה
+      if (uniqueTemplates.length > 0 && !selectedTemplateId) {
+        setSelectedTemplateId(uniqueTemplates[0].id);
       }
+      
+      setLoading(false);
+    }, (error) => {
+      console.error("Error fetching all questionnaires:", error);
+      setLoading(false);
     });
+
     return () => unsubscribe();
-  }, [currentUser, selectedTemplateId]);
+  }, [currentUser, selectedTemplateId]); // תלות ב-selectedTemplateId כדי לאתחל אותו נכון
+
+  // --- לוגיקת הסינון והעיבוד ---
+  const processedData = useMemo(() => {
+    // התחל עם סינון לפי התבנית שנבחרה
+    let filteredData = selectedTemplateId 
+      ? allQuestionnaires.filter(q => q.template?.id === selectedTemplateId)
+      : allQuestionnaires;
+
+    // החל חיפוש
+    if (searchTerm) {
+      const lowercasedFilter = searchTerm.toLowerCase();
+      filteredData = filteredData.filter(item =>
+        (item.intervieweeId?.includes(lowercasedFilter)) ||
+        (item.intervieweeFirstName?.toLowerCase().includes(lowercasedFilter)) ||
+        (item.intervieweeLastName?.toLowerCase().includes(lowercasedFilter)) ||
+        (item.interviewerName?.toLowerCase().includes(lowercasedFilter))
+      );
+    }
+
+    // החל מיון
+    if (sortConfig.key) {
+      filteredData.sort((a, b) => {
+        let aValue = a[sortConfig.key];
+        let bValue = b[sortConfig.key];
+        if (sortConfig.key === 'submissionTimestamp') {
+            aValue = aValue?.toDate() || 0;
+            bValue = bValue?.toDate() || 0;
+        }
+        if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
+        if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
+        return 0;
+      });
+    }
+    return filteredData;
+  }, [allQuestionnaires, selectedTemplateId, searchTerm, sortConfig]);
+
+  const dynamicColumns = useMemo(() => {
+    if (!selectedTemplateId || availableTemplates.length === 0) return [];
+    const currentTemplateData = allQuestionnaires.find(q => q.template?.id === selectedTemplateId)?.template;
+    return currentTemplateData?.questions?.filter(q => q.type === 'radio' && q.showInDashboard) || [];
+  }, [selectedTemplateId, allQuestionnaires]);
 
   useEffect(() => {
     if (!selectedTemplateId) {
